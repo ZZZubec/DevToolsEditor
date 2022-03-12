@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "GameProtoypeEditor": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

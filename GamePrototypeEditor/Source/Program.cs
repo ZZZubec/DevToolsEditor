@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using GPE;
 using System;
+using System.Reflection;
 using Urho3DNet;
 
 namespace GameProtoypeEditor
@@ -9,6 +10,8 @@ namespace GameProtoypeEditor
     {
         static void Main(string[] args)
         {
+            //Urho3D.ParseArguments(Assembly.GetExecutingAssembly(), args);
+            //Launcher.Run(_ => new EditorApplication(_));
             Parser.Default.ParseArguments<ApplicationOptions>(args)
                 .WithParsed<ApplicationOptions>(o =>
                 {

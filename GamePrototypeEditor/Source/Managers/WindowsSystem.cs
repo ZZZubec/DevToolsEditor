@@ -29,6 +29,8 @@ namespace GPE.Windows
 
         private int g_width, g_height;
 
+        private Texture2D texture;
+
         public WindowsSystem(EditorApplication app)
         {
             this.app = app;
@@ -39,12 +41,13 @@ namespace GPE.Windows
             g_width = Context.Instance.Graphics.Width;
             g_height = Context.Instance.Graphics.Height;
 
-            UI_node = app._camera.CreateChild("UI");
+            UI_node = app._camera3DNode.CreateChild("UI");
             float aspect = (float)g_width / (float)g_height;
             UI_node.SetScale2D(new Vector2(aspect-0.22f, 1f));
-            materialUI = Context.Instance.Cache.GetResource<Material>("UI/Materials/diff.xml");
+            UI_node.Position += new Vector3(0.01f, -0.01f, 0.99f);
+            materialUI = app.GetCache().GetResource<Material>("UI/Materials/diff2.xml");
 
-            var texture = new Texture2D(Context.Instance);
+            texture = new Texture2D(Context.Instance);
             texture.SetSize(g_width, g_height, 15, TextureUsage.TextureStatic, 1, false);
 
             var ww = 80;
@@ -53,17 +56,38 @@ namespace GPE.Windows
             simpleUI = UI_node.CreateComponent<SimpleUI>();
             simpleUI.SetApp(app);
             var window = simpleUI.AddUI(SUI.WINDOW, "window", new int[] {0, 200, 200, 120});
-            var node = simpleUI.AddUI(SUI.NODE, "gameObject", new int[] {0, 0}, window.Node);
-            simpleUI.AddUI(SUI.NODE, "treeTo_oxy", new int[] {0, 0}, node.Node);
-            simpleUI.Render();
+            var node = simpleUI.AddUI(SUI.NODE, "GameObject", null, window);
+            var tree = simpleUI.AddUI(SUI.NODE, "treeTo", null, window);
+            simpleUI.AddUI(SUI.NODE, "in_gameObject_oxy", null, node);
             //app.LogInfo(app.Dump(simpleUI.Node).ToString());
             //app.LogInfo(window.GetTypeHash().ToString());
 
-            //window.GetImage().SavePNG("sc_image.png");
-            texture.SetData(simpleUI.GetImage());
-            materialUI.SetTexture(0, texture);
+            ReInit();
             
             CreateWindow("test", 200, 200, ww, wh);
+
+            app.SubscribeToEvent(E.Resized, OnResized);
+        }
+
+        private void ReInit()
+        {
+            texture = new Texture2D(Context.Instance);
+            texture.SetSize(g_width, g_height, 15, TextureUsage.TextureStatic, 1, false);
+            simpleUI.Resize(g_width, g_height);
+            simpleUI.Render();
+            simpleUI.GetImage().SavePNG("sc_image.png");
+            texture.SetData(simpleUI.GetImage());
+            materialUI.SetTexture(0, texture);
+        }
+
+        private void OnResized(VariantMap eventData)
+        {
+            if (g_width != Context.Instance.Graphics.Width || g_height != Context.Instance.Graphics.Height)
+            {
+                g_width = Context.Instance.Graphics.Width;
+                g_height = Context.Instance.Graphics.Height;
+                ReInit();
+            }
         }
 
         private void ShowToolBar()
@@ -235,7 +259,7 @@ namespace GPE.Windows
                 0.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
             };
 
-            var projView = app._viewport.Camera.GetViewProj();
+            var projView = app._viewport3D.Camera.ViewProj;
             for (var i = 0; i < vd.Length; i += 8)
             {
                 Vector3 vec = new Vector3(vd[i+0], vd[i+1], vd[i+2]);

@@ -3,3 +3,7 @@ GameProtoypeEditor/Urho3D.log
 GameProtoypeEditor/obj/
 gpe.code-workspace
 .vs/
+GamePrototypeEditor/bin/
+GamePrototypeEditor/obj/
+.idea/
+Urho3D.log

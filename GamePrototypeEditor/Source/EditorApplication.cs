@@ -25,12 +25,12 @@ namespace GPE
             _options = options;
         }
 
-        public Vector3 StartPositionCamera = Vector3.Zero; //new Vector3(2, 17, -9);
+        public Vector3 StartPositionCamera = new Vector3(0, 2, 0);
 
         private readonly ApplicationOptions _options;
         private Scene _scene;
-        public Viewport _viewport;
-        public Node _camera;
+        public Viewport _viewport3D;
+        public Node _camera3DNode;
         //private KinematicCharacterController _characterController;
         private Node _cameraRoot;
         private Node _light = null;
@@ -126,9 +126,9 @@ namespace GPE
         protected override void Dispose(bool disposing)
         {
             Context.Renderer.SetViewport(0, null);    // Enable disposal of viewport by making it unreferenced by engine.
-            _viewport.Dispose();
+            _viewport3D.Dispose();
             _scene.Dispose();
-            _camera.Dispose();
+            _camera3DNode.Dispose();
             _light.Dispose();
             base.Dispose(disposing);
         }
@@ -139,26 +139,26 @@ namespace GPE
             _options.Windowed = true;
             _options.Width = 1305;
             _options.Height = 768;
-            engineParameters_[Urho3D.EpFullScreen] = !_options.Windowed;
+            EngineParameters[Urho3D.EpFullScreen] = !_options.Windowed;
             if (_options.Windowed)
             {
-                engineParameters_[Urho3D.EpWindowResizable] = true;
+                EngineParameters[Urho3D.EpWindowResizable] = true;
             }
             if (_options.Width.HasValue)
-                engineParameters_[Urho3D.EpWindowWidth] = _options.Width.Value;
+                EngineParameters[Urho3D.EpWindowWidth] = _options.Width.Value;
             if (_options.Height.HasValue)
-                engineParameters_[Urho3D.EpWindowHeight] = _options.Height.Value;
-            engineParameters_[Urho3D.EpWindowTitle] = "Game Prototype Editor";
-            engineParameters_[Urho3D.EpResourcePrefixPaths] = $"{currentDir};{currentDir}/../../../../Content";
-            engineParameters_[Urho3D.EpHighDpi] = _options.HighDpi;
-            engineParameters_[Urho3D.EpRenderPath] = _options.RenderPath;
+                EngineParameters[Urho3D.EpWindowHeight] = _options.Height.Value;
+            EngineParameters[Urho3D.EpWindowTitle] = "Game Prototype Editor";
+            EngineParameters[Urho3D.EpResourcePrefixPaths] = $"{currentDir};{currentDir}/../../../../Content";
+            EngineParameters[Urho3D.EpHighDpi] = _options.HighDpi;
+            EngineParameters[Urho3D.EpRenderPath] = _options.RenderPath;
         }
 
         public override void Start()
         {
 
             UI ui = Context.GetSubsystem<UI>();
-            var uiStyle = Context.Cache.GetResource<XMLFile>("UI/DefaultStyle.xml");
+            var uiStyle = GetCache().GetResource<XMLFile>("UI/DefaultStyle.xml");
             ui.Root.SetDefaultStyle(uiStyle);
 
             ui.Cursor = new Cursor(Context);
@@ -183,14 +183,14 @@ namespace GPE
             zone.FogColor = _c;
 
             _light = _scene.CreateChild("DirectionalLight");
-            _light.SetWorldPosition(new Vector3(0, 10, -10));
-            _light.SetDirection(new Vector3(-2, -2, 1));
+            _light.WorldPosition = new Vector3(0, 10, -10);
+            _light.WorldDirection = new Vector3(-2, -2, 1);
             var light = _light.CreateComponent<Light>();
             light.Color = Color.White;
             light.CastShadows = true;
             light.ShadowCascade = new CascadeParameters(50, 0, 0, 0, 0.9f);
             //_light.Brightness = 1;
-            light.SetLightMode(LightMode.LmRealtime);
+            light.LightMode = LightMode.LmRealtime;
             light.LightType = LightType.LightDirectional;
 
             #region Character
@@ -210,42 +210,49 @@ namespace GPE
             */
             #endregion
 
+            
+
             _cameraRoot = _scene.CreateChild("Camera Pivot", CreateMode.Replicated);
             _cameraRoot.Position = new Vector3(0, 0, 0);
-            _camera = _cameraRoot.CreateChild("Main Camera", CreateMode.Replicated);
-            _camera.Position = StartPositionCamera;
-            //_camera.LookAt(new Vector3(6, 0, 6), Vector3.Up);
-            _viewport = new Viewport(Context);
-            _viewport.Scene = _scene;
-            _viewport.Camera = (Camera)_camera.GetOrCreateComponent((StringHash)typeof(Camera).Name);
-            _viewport.Camera.FarClip = 350f;
-            _viewport.Camera.Fov = 45f;
-            _viewport.Camera.NearClip = 0.01f;
+            _camera3DNode = _cameraRoot.CreateChild("Main Camera", CreateMode.Replicated);
+            _camera3DNode.Position = StartPositionCamera;
 
-            Context.Renderer.SetViewport(0, _viewport);
+            _camera3DNode.LookAt(Vector3.Zero, Vector3.Up);
+            //_camera.LookAt(new Vector3(6, 0, 6), Vector3.Up);
+            _viewport3D = new Viewport(Context);
+            _viewport3D.Scene = _scene;
+            _viewport3D.Camera = (Camera)_camera3DNode.GetOrCreateComponent((StringHash)typeof(Camera).Name);
+            _viewport3D.Camera.FarClip = 10f;
+            _viewport3D.Camera.Fov = 45f;
+            _viewport3D.Camera.NearClip = 0.1f;
+
+            Context.Renderer.SetViewport(0, _viewport3D);
 
             #region WindowsSystem
-            stateSystem = new StateMachineSystem();
-            windows = new WindowsSystem(this);
+            //stateSystem = new StateMachineSystem();
+            //windows = new WindowsSystem(this);
             #endregion
 
             #region Mouse
             Context.Input.SetMouseVisible(true);
             Context.Input.SetMouseGrabbed(false);
             Context.Input.SetMouseMode(MouseMode.MmFree);
-            Context.Input.SetMousePosition( new IntVector2(Context.Graphics.Width/2, Context.Graphics.Height/2));
+            Context.Input.MousePosition = new IntVector2(Context.Graphics.Width/2, Context.Graphics.Height/2);
             //Context.Input.SetMouseMode(MouseMode.MmRelative, false);
             #endregion
 
             _debugHud = Context.Engine.CreateDebugHud();
             _debugHud.Mode = DebugHudMode.DebughudShowAll;
 
-            windows.SetCamera(_camera, _viewport.Camera);
+            if (windows != null)
+            {
+                windows.SetCamera(_camera3DNode, _viewport3D.Camera);
+            }
 
 
             #region InitMap
             LogInfo("Dirs:");
-            foreach (string d in Context.Cache.ResourceDirs)
+            foreach (string d in Context.ResourceCache.ResourceDirs)
             {
                 LogInfo(string.Format("Dir: {0}", d));
             }
@@ -253,7 +260,7 @@ namespace GPE
             var _platforms = new Platforms(EnumPlatform.PC);
             _ufs = new UniversalFileSystem(_platforms, this);
 
-            //_material = Context.Cache.GetResource<Material>("n_sector/materials/m_blocks.xml", true);
+            //_material = GetCache().GetResource<Material>("n_sector/materials/m_blocks.xml", true);
             //_material.Name = "blocks";
 
             int blockID = 7;
@@ -264,7 +271,10 @@ namespace GPE
 
             _debugRenderer = _scene.CreateComponent<DebugRenderer>();
 
-            stateSystem.onSpaceKeyChangeState += OnChangeSpaceKeyState;
+            if (stateSystem != null)
+            {
+                stateSystem.onSpaceKeyChangeState += OnChangeSpaceKeyState;
+            }
 
             level = new Level("level1", 10, 10);
 
@@ -298,15 +308,15 @@ namespace GPE
                 var timestep = args[E.Update.TimeStep].Float;
                 Debug.Assert(this != null);
 
-                int xx = (int)_camera.Position.X / 16;
-                int yy = (int)_camera.Position.Z / 16;
+                int xx = (int)_camera3DNode.Position.X / 16;
+                int yy = (int)_camera3DNode.Position.Z / 16;
 
                 if (Context.Input.GetKeyDown(Key.KeyEscape))
                 {
                     Context.Engine.Exit();
                 }
 
-                //ShowGrid();
+                ShowGrid();
                 ShowMenu();
 
                 if (isShowing)
@@ -316,8 +326,9 @@ namespace GPE
 
                         ImGui.TextColored(Color.White,
                             $"chunk:{xx}_{yy}\n" +
-                            $"pos:{_camera.Position.X},{_camera.Position.Y},{_camera.Position.Z}\n" +
-                            $"rotXYZ:{_camera.Rotation.EulerAngles.X},{_camera.Rotation.EulerAngles.Y},{_camera.Rotation.EulerAngles.Z}\n" +
+                            $"pos:{_camera3DNode.Position.X},{_camera3DNode.Position.Y},{_camera3DNode.Position.Z}\n" +
+                            $"rotXYZ:{_camera3DNode.Rotation.EulerAngles.X},{_camera3DNode.Rotation.EulerAngles.Y},{_camera3DNode.Rotation.EulerAngles.Z}\n" +
+                            $"rotXY:{angleX},{angleY}\n" +
                             $"pos:{ui.CursorPosition.X},{ui.CursorPosition.Y}\n" +
                             $"Frame time: {timestep}, \n");
                         if (ImGui.Button("Exit"))
@@ -337,8 +348,8 @@ namespace GPE
                         Context.Input.SetMouseVisible(false);
                         Context.Input.SetMouseGrabbed(true);
                         Context.Input.SetMouseMode(MouseMode.MmRelative, true);
-                        angleX = _camera.Rotation.EulerAngles.X;
-                        angleY = _camera.Rotation.EulerAngles.Y;
+                        angleX = _camera3DNode.Rotation.EulerAngles.X;
+                        angleY = _camera3DNode.Rotation.EulerAngles.Y;
                     }
                     isMoving = true;
                 }
@@ -347,6 +358,20 @@ namespace GPE
                 {
                     var scaleSpeed = 20f;
                     var mouseSensivity = 20f;
+
+                    while(_camera3DNode.Rotation.EulerAngles.X >= 89)
+                    {
+                        angleX -= 0.1f;
+                        angleY = 0.1f;
+                        _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
+                    }
+
+                    while(_camera3DNode.Rotation.EulerAngles.X <= -89)
+                    {
+                        angleX += 0.1f;
+                        angleY = 0.1f;
+                        _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
+                    }
 
                     Vector3 moveDirection = Vector3.Zero;
                     float moveX = 0;
@@ -373,16 +398,16 @@ namespace GPE
                     }
 
                     moveDirection =
-                        moveX * scaleSpeed * _camera.Right * timestep +
-                        moveY * scaleSpeed * _camera.Direction * timestep;
-                    _camera.Position += moveDirection;
+                        moveX * scaleSpeed * _camera3DNode.Right * timestep +
+                        moveY * scaleSpeed * _camera3DNode.Direction * timestep;
+                    _camera3DNode.Position += moveDirection;
 
                     IntVector2 vec = Context.Input.MouseMove;
                     if (timestep > 0.01f)
                         timestep = 0.01f;
                     angleY += vec.X * mouseSensivity * timestep;
                     angleX += vec.Y * mouseSensivity * timestep;
-                    _camera.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
+                    _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
                     /**/
                 }
                 else
@@ -395,7 +420,10 @@ namespace GPE
                     }
                 }
 
-                windows.InputUpdate(timestep);
+                if (windows != null)
+                {
+                    windows.InputUpdate(timestep);
+                }
 
             });
             #endregion
@@ -519,13 +547,13 @@ namespace GPE
             {
 
                 Marshal.Copy(f_verts, 0, pnt_vb, f_verts.Length);
-                vertexBuffer.SetShadowed(true);
+                vertexBuffer.IsShadowed = true;
                 vertexBuffer.SetSize(numFaces, vertexElements);
                 vertexBuffer.SetData(pnt_vb);
 
                 Marshal.Copy(f_facesIndex, 0, pnt_ib, f_facesIndex.Length);
                 //IndexBuffer.PackIndexData(indexData, pnt_ib, false, 0, (uint)indexData.Length);
-                indexBuffer.SetShadowed(true);
+                indexBuffer.IsShadowed = true;
                 indexBuffer.SetSize(numFaces, true);
                 indexBuffer.SetData(pnt_ib);
 
@@ -603,7 +631,7 @@ namespace GPE
 
         public ResourceCache GetCache()
         {
-            return Context.Cache;
+            return Context.ResourceCache;
         }
 
         public void LogError(string v)

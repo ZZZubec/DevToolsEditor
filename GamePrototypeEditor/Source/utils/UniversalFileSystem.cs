@@ -50,7 +50,7 @@ namespace GPE.utils
                 File file = universalApp.GetCache().GetFile(path_filename, true);
                 universalApp.LogInfo(string.Format("UFS->ReadFile()->file_size:{0}", file.GetSize()));
                 int f_size = (int)file.GetSize();
-                UCharArray uch = new UCharArray(f_size);
+                ByteVector uch = new ByteVector(f_size);
                 buffer = new GameBuffer(f_size);
 
                 file.ReadBinary(uch);

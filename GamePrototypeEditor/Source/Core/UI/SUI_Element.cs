@@ -6,61 +6,25 @@ using Urho3DNet;
 
 namespace GPE.Core.UI
 {
-
-    public interface ISUI_Controler
+    public class SUI_Element
     {
-        //
-    }
-
-    public interface ISUI_Element
-    {
-        string spriteName { get; }
-
-        IntVector2 offset { get; }
-
-        Image Render(IntVector2 rectOffset, SUI_Element parentElement);
-        IntRect GetClipRect();
-        IntVector2 GetSize();
-
-        IntVector2 GetOffsetElement();
-    }
-
-    [ObjectFactory]
-    public class SUI_Element : Component, ISUI_Element
-    {
-        public bool needUpdate;
-        public SimpleUI simpleUI;
-        public int width;
-        public int height;
+        public string name;
+        public IntVector2 position;
+        public IntVector2 size;
 
         private string _spriteName;
         public string spriteName {
             get { return _spriteName; }
             set { _spriteName = value; }
         }
-        public Image imageElement;
-
-        public string name;
-
-        public int minWidth = 16 + 5;
-        public int minHeight = 12 + 5;
-        private IntVector2 _offset;
-        public IntVector2 offset {
-            get { return _offset; }
-            set { _offset = value; }
-        }
 
         private SUI_Element parent;
 
-        public SUI_Element(Context context) : base(context)
+        public SUI_Element(string name, IntVector2 position, int width, int height)
         {
-            imageElement = new Image(context);
-            imageElement.SetSize(100, 100, 4);
-            needUpdate = true;
-            spriteName = "SUI_Element";
-            offset = new IntVector2(0,0);
-            width = minWidth;
-            height = minHeight;
+            this.name = name;
+            this.position = position;
+            this.size = new IntVector2(width, height);
         }
 
         public void SetParent(SUI_Element parent)
@@ -68,55 +32,15 @@ namespace GPE.Core.UI
             this.parent = parent;
         }
 
-        public virtual Image Render(IntVector2 offsetPosition, SUI_Element parentElement)
+        public virtual void Render()
         {
-            //offset = new IntVector2(offsetPosition.X + position.X, offsetPosition.Y + position.Y);
-            if (needUpdate)
-            {
-                if (imageElement.Width != width || imageElement.Height != height)
-                {
-                    imageElement.Resize(
-                        width < minWidth ? minWidth : width,
-                        height < minHeight ? minHeight : height);
-                    imageElement.Clear(Color.Transparent);
-                }
-                Paint(parentElement);
-                needUpdate = false;
-            }
-
-            return imageElement;
         }
 
-        public virtual void Paint(SUI_Element parentElement) { }
-
-        public Image GetImage()
-        {
-            return imageElement;
-        }
-
-        public void UpdateSize(int width, int height)
-        {
-            this.width = width;
-            this.height = height;
-        }
-
-        public virtual IntVector2 GetOffsetElement()
-        {
-            var offsetElement = IntVector2.Zero;
-            if (this.parent != null)
-                offsetElement += this.parent.GetOffsetElement();
-            offsetElement += offset;
-            return offsetElement;
-        }
-
-        public IntRect GetClipRect()
-        {
-            return new IntRect(0, 0, imageElement.Width, imageElement.Height);
-        }
+        public virtual void Update(float deltaTime) { }
 
         public IntVector2 GetSize()
         {
-            return new IntVector2(width, height);
+            return size;
         }
     }
 }

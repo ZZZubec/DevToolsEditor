@@ -55,17 +55,9 @@ namespace GPE.Windows
 
             simpleUI = UI_node.CreateComponent<SimpleUI>();
             simpleUI.SetApp(app);
-            var window = simpleUI.AddUI(SUI.WINDOW, "window", new int[] {0, 200, 200, 120});
-            var node = simpleUI.AddUI(SUI.NODE, "GameObject", null, window);
-            var tree = simpleUI.AddUI(SUI.NODE, "treeTo", null, window);
-            simpleUI.AddUI(SUI.NODE, "in_gameObject_oxy", null, node);
-            //app.LogInfo(app.Dump(simpleUI.Node).ToString());
-            //app.LogInfo(window.GetTypeHash().ToString());
 
             ReInit();
             
-            CreateWindow("test", 200, 200, ww, wh);
-
             app.SubscribeToEvent(E.Resized, OnResized);
         }
 
@@ -73,10 +65,8 @@ namespace GPE.Windows
         {
             texture = new Texture2D(Context.Instance);
             texture.SetSize(g_width, g_height, 15, TextureUsage.TextureStatic, 1, false);
-            simpleUI.Resize(g_width, g_height);
+            simpleUI.OnResize(g_width, g_height);
             simpleUI.Render();
-            simpleUI.GetImage().SavePNG("sc_image.png");
-            texture.SetData(simpleUI.GetImage());
             materialUI.SetTexture(0, texture);
         }
 
@@ -119,38 +109,6 @@ namespace GPE.Windows
                 }
                 ImGui.End();
             }
-
-            /*
-            float[] vd = {
-                //front
-                0.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
-                0.0f, 1.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 0,  //1
-                1.0f, 1.0f, -0.0f,     0.0f,  0.0f, 1.0f,   1, 0,  //2
-                    
-                1.0f, 1.0f, -0.0f,     0.0f,  0.0f, 1.0f,   1, 0,  //2
-                1.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   1, 1,  //3
-                0.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
-            };
-
-            var projView = app._viewport.Camera.GetInverseViewProj();
-            for (var i = 0; i < vd.Length; i += 8)
-            {
-                Vector3 vec = new Vector3(vd[i+0], vd[i+1], vd[i+2]);
-                vec = projView * vec + app._camera.Direction * 0.001f;
-                app.LogInfo($"vec:{vec.X},{vec.Y},{vec.Z}");
-                vd[i+0] = vec.X;
-                vd[i+1] = vec.Y;
-                vd[i+2] = vec.Z;
-            }
-
-            app._debugRenderer.AddPolygon(
-                new Vector3(vd[0], vd[1], vd[2]), 
-                new Vector3(vd[8], vd[9], vd[10]),
-                new Vector3(vd[16], vd[17], vd[18]),
-                new Vector3(vd[32], vd[33], vd[34]),
-                Color.Red, true
-                );
-            */
         }
 
         public void InputUpdate(float timestep)
@@ -169,44 +127,6 @@ namespace GPE.Windows
             }
         }
 
-/*
-        private void CreateWindow(string window_name, int x, int y, int width, int height)
-        {
-            const float wi = 1305;
-            const float hi = 768;
-            var node = UI_node.CreateChild(window_name);
-            float xx = x / wi;
-            float yy = y / hi;
-            float w = width / wi;
-            float h = height / hi;
-
-            float[] vd = {
-                //front
-                0.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
-                0.0f, 1.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 0,  //1
-                1.0f, 1.0f, -0.0f,     0.0f,  0.0f, 1.0f,   1, 0,  //2
-                    
-                1.0f, 1.0f, -0.0f,     0.0f,  0.0f, 1.0f,   1, 0,  //2
-                1.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   1, 1,  //3
-                0.0f, 0.0f, -0.0f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
-            };
-
-            for (var i = 0; i < vd.Length; i += 8)
-            {
-                if (vd[i + 0] == 0.0f)
-                    vd[i + 0] = xx;
-                else
-                    vd[i + 0] = xx + w;
-
-                if (vd[i + 1] == 0.0f)
-                    vd[i + 1] = yy - h;
-                else
-                    vd[i + 1] = yy;
-            }
-            var model = app.CreateModel(vd, id, new BoundingBox(-1, 1));
-            var staticModel = app.CreateStaticModel(UI_node, model, materialUI);
-        }
-*/
         private void CreateWindow(string window_name, int x, int y, int width, int height)
         {
             const float wi = 1305;

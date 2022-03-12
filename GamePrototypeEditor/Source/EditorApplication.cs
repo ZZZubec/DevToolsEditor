@@ -30,7 +30,9 @@ namespace GPE
         private readonly ApplicationOptions _options;
         private Scene _scene;
         public Viewport _viewport3D;
+
         public Node _camera3DNode;
+
         //private KinematicCharacterController _characterController;
         private Node _cameraRoot;
         private Node _light = null;
@@ -47,71 +49,75 @@ namespace GPE
 
         private bool isShowing = true;
 
-        private float[] vertexData = new float[] {
-                // Position             Normal
+        private float[] vertexData = new float[]
+        {
+            // Position             Normal
             //front
-            -0.5f, -0.5f, -0.5f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
-            -0.5f,  0.5f, -0.5f,     0.0f,  0.0f, 1.0f,   0, 0,  //1
-            +0.5f,  0.5f, -0.5f,     0.0f,  0.0f, 1.0f,   1, 0,  //2
-                
-            +0.5f, +0.5f, -0.5f,     0.0f,  0.0f, 1.0f,   1, 0,  //2
-            +0.5f, -0.5f, -0.5f,     0.0f,  0.0f, 1.0f,   1, 1,  //3
-            -0.5f, -0.5f, -0.5f,     0.0f,  0.0f, 1.0f,   0, 1,  //0
+            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0, 1, //0
+            -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0, 0, //1
+            +0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1, 0, //2
+
+            +0.5f, +0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1, 0, //2
+            +0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1, 1, //3
+            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0, 1, //0
 
             //back
-            +0.5f, -0.5f, +0.5f,     0.0f,  0.0f, -1.0f,  0, 1,  //4
-            +0.5f, +0.5f, +0.5f,     0.0f,  0.0f, -1.0f,  0, 0,  //5
-            -0.5f, +0.5f, +0.5f,     0.0f,  0.0f, -1.0f,  1, 0,  //6
+            +0.5f, -0.5f, +0.5f, 0.0f, 0.0f, -1.0f, 0, 1, //4
+            +0.5f, +0.5f, +0.5f, 0.0f, 0.0f, -1.0f, 0, 0, //5
+            -0.5f, +0.5f, +0.5f, 0.0f, 0.0f, -1.0f, 1, 0, //6
 
-            -0.5f, +0.5f, +0.5f,     0.0f,  0.0f, -1.0f,  1, 0,  //6
-            -0.5f, -0.5f, +0.5f,     0.0f,  0.0f, -1.0f,  1, 1,  //7
-            +0.5f, -0.5f, +0.5f,     0.0f,  0.0f, -1.0f,  0, 1,  //4
+            -0.5f, +0.5f, +0.5f, 0.0f, 0.0f, -1.0f, 1, 0, //6
+            -0.5f, -0.5f, +0.5f, 0.0f, 0.0f, -1.0f, 1, 1, //7
+            +0.5f, -0.5f, +0.5f, 0.0f, 0.0f, -1.0f, 0, 1, //4
 
             //top
-            -0.5f, +0.5f, -0.5f,     0.0f, +1.0f,  0.0f,  0, 1,  //8
-            -0.5f, +0.5f, +0.5f,     0.0f, +1.0f,  0.0f,  0, 0,  //9
-            +0.5f, +0.5f, +0.5f,     0.0f, +1.0f,  0.0f,  1, 0,  //10
+            -0.5f, +0.5f, -0.5f, 0.0f, +1.0f, 0.0f, 0, 1, //8
+            -0.5f, +0.5f, +0.5f, 0.0f, +1.0f, 0.0f, 0, 0, //9
+            +0.5f, +0.5f, +0.5f, 0.0f, +1.0f, 0.0f, 1, 0, //10
 
-            +0.5f, +0.5f, +0.5f,     0.0f, +1.0f,  0.0f,  1, 0,  //10
-            +0.5f, +0.5f, -0.5f,     0.0f, +1.0f,  0.0f,  1, 1,  //11
-            -0.5f, +0.5f, -0.5f,     0.0f, +1.0f,  0.0f,  0, 1,  //8
+            +0.5f, +0.5f, +0.5f, 0.0f, +1.0f, 0.0f, 1, 0, //10
+            +0.5f, +0.5f, -0.5f, 0.0f, +1.0f, 0.0f, 1, 1, //11
+            -0.5f, +0.5f, -0.5f, 0.0f, +1.0f, 0.0f, 0, 1, //8
 
             //left
-            -0.5f, -0.5f, +0.5f,    +1.0f, +0.0f, +0.0f,  0, 1,
-            -0.5f, +0.5f, +0.5f,    +1.0f, +0.0f, +0.0f,  0, 0,
-            -0.5f, +0.5f, -0.5f,    +1.0f, +0.0f, +0.0f,  1, 0,
+            -0.5f, -0.5f, +0.5f, +1.0f, +0.0f, +0.0f, 0, 1,
+            -0.5f, +0.5f, +0.5f, +1.0f, +0.0f, +0.0f, 0, 0,
+            -0.5f, +0.5f, -0.5f, +1.0f, +0.0f, +0.0f, 1, 0,
 
-            -0.5f, +0.5f, -0.5f,    +1.0f, +0.0f, +0.0f,  1, 0,
-            -0.5f, -0.5f, -0.5f,    +1.0f, +0.0f, +0.0f,  1, 1,
-            -0.5f, -0.5f, +0.5f,    +1.0f, +0.0f, +0.0f,  0, 1,
+            -0.5f, +0.5f, -0.5f, +1.0f, +0.0f, +0.0f, 1, 0,
+            -0.5f, -0.5f, -0.5f, +1.0f, +0.0f, +0.0f, 1, 1,
+            -0.5f, -0.5f, +0.5f, +1.0f, +0.0f, +0.0f, 0, 1,
 
             //right
-            +0.5f, -0.5f, -0.5f,    -1.0f, +0.0f, +0.0f,  0, 1,
-            +0.5f, +0.5f, -0.5f,    -1.0f, +0.0f, +0.0f,  0, 0,
-            +0.5f, +0.5f, +0.5f,    -1.0f, +0.0f, +0.0f,  1, 0,
+            +0.5f, -0.5f, -0.5f, -1.0f, +0.0f, +0.0f, 0, 1,
+            +0.5f, +0.5f, -0.5f, -1.0f, +0.0f, +0.0f, 0, 0,
+            +0.5f, +0.5f, +0.5f, -1.0f, +0.0f, +0.0f, 1, 0,
 
-            +0.5f, +0.5f, +0.5f,    +1.0f, +0.0f, +0.0f,  1, 0,
-            +0.5f, -0.5f, +0.5f,    +1.0f, +0.0f, +0.0f,  1, 1,
-            +0.5f, -0.5f, -0.5f,    +1.0f, +0.0f, +0.0f,  0, 1,
+            +0.5f, +0.5f, +0.5f, +1.0f, +0.0f, +0.0f, 1, 0,
+            +0.5f, -0.5f, +0.5f, +1.0f, +0.0f, +0.0f, 1, 1,
+            +0.5f, -0.5f, -0.5f, +1.0f, +0.0f, +0.0f, 0, 1,
         };
 
-        private int[] indexData = new int[] {
-                0, 1, 2,
-                3, 4, 5,
+        private int[] indexData = new int[]
+        {
+            0, 1, 2,
+            3, 4, 5,
 
-                6, 7, 8,
-                9, 10, 11,
+            6, 7, 8,
+            9, 10, 11,
 
-                12, 13, 14,
-                15, 16, 17,
+            12, 13, 14,
+            15, 16, 17,
 
-                18, 19, 20,
-                21, 22, 23,
+            18, 19, 20,
+            21, 22, 23,
 
-                24, 25, 26,
-                27, 28, 29
+            24, 25, 26,
+            27, 28, 29
         };
+
         private DebugHud _debugHud;
+
         //private RigidBody _body;
         //private CollisionShape _shape;
         public DebugRenderer _debugRenderer;
@@ -119,13 +125,10 @@ namespace GPE
         public StateMachineSystem stateSystem;
         public WindowsSystem windows;
 
-        public Level level;
-        private Node gridNode;
-        public Material gridMaterial;
 
         protected override void Dispose(bool disposing)
         {
-            Context.Renderer.SetViewport(0, null);    // Enable disposal of viewport by making it unreferenced by engine.
+            Context.Renderer.SetViewport(0, null); // Enable disposal of viewport by making it unreferenced by engine.
             _viewport3D.Dispose();
             _scene.Dispose();
             _camera3DNode.Dispose();
@@ -144,6 +147,7 @@ namespace GPE
             {
                 EngineParameters[Urho3D.EpWindowResizable] = true;
             }
+
             if (_options.Width.HasValue)
                 EngineParameters[Urho3D.EpWindowWidth] = _options.Width.Value;
             if (_options.Height.HasValue)
@@ -163,7 +167,7 @@ namespace GPE
 
             ui.Cursor = new Cursor(Context);
             ui.Cursor.SetDefaultStyle(uiStyle);
-            
+
             var text = new Text(Context);
             text.SetText("test");
             ui.Root.AddChild(text);
@@ -194,6 +198,7 @@ namespace GPE
             light.LightType = LightType.LightDirectional;
 
             #region Character
+
             /*
             var character = _scene.CreateChild("character");
             _body = character.CreateComponent<RigidBody>();
@@ -208,9 +213,10 @@ namespace GPE
 
             _characterController = character.CreateComponent<KinematicCharacterController>();
             */
+
             #endregion
 
-            
+
 
             _cameraRoot = _scene.CreateChild("Camera Pivot", CreateMode.Replicated);
             _cameraRoot.Position = new Vector3(0, 0, 0);
@@ -221,7 +227,7 @@ namespace GPE
             //_camera.LookAt(new Vector3(6, 0, 6), Vector3.Up);
             _viewport3D = new Viewport(Context);
             _viewport3D.Scene = _scene;
-            _viewport3D.Camera = (Camera)_camera3DNode.GetOrCreateComponent((StringHash)typeof(Camera).Name);
+            _viewport3D.Camera = (Camera) _camera3DNode.GetOrCreateComponent((StringHash) typeof(Camera).Name);
             _viewport3D.Camera.FarClip = 10f;
             _viewport3D.Camera.Fov = 45f;
             _viewport3D.Camera.NearClip = 0.1f;
@@ -229,16 +235,20 @@ namespace GPE
             Context.Renderer.SetViewport(0, _viewport3D);
 
             #region WindowsSystem
+
             //stateSystem = new StateMachineSystem();
             //windows = new WindowsSystem(this);
+
             #endregion
 
             #region Mouse
+
             Context.Input.SetMouseVisible(true);
             Context.Input.SetMouseGrabbed(false);
             Context.Input.SetMouseMode(MouseMode.MmFree);
-            Context.Input.MousePosition = new IntVector2(Context.Graphics.Width/2, Context.Graphics.Height/2);
+            Context.Input.MousePosition = new IntVector2(Context.Graphics.Width / 2, Context.Graphics.Height / 2);
             //Context.Input.SetMouseMode(MouseMode.MmRelative, false);
+
             #endregion
 
             _debugHud = Context.Engine.CreateDebugHud();
@@ -251,6 +261,7 @@ namespace GPE
 
 
             #region InitMap
+
             LogInfo("Dirs:");
             foreach (string d in Context.ResourceCache.ResourceDirs)
             {
@@ -267,6 +278,7 @@ namespace GPE
             LogInfo($"blockID:{blockID}, value:{blockID % 16}");
             //CreateStaticModelBlock(_model, vertexData, indexData, _material, blockID, new BoundingBox(-0.5f, 0.5f));
             //var sb = Dump(_scene); LogInfo(sb.ToString());
+
             #endregion
 
             _debugRenderer = _scene.CreateComponent<DebugRenderer>();
@@ -276,40 +288,31 @@ namespace GPE
                 stateSystem.onSpaceKeyChangeState += OnChangeSpaceKeyState;
             }
 
-            level = new Level("level1", 10, 10);
-
-            gridNode = _scene.CreateChild("grid");
-            gridMaterial = GetCache().GetResource<Material>("UI/Materials/Grid.xml");
-            //gridMaterial.FillMode = FillMode.FillWireframe;
-
-            int[] id = {
+            int[] id =
+            {
                 0, 1, 2,
                 3, 4, 5
             };
 
-            float[] vd = {
+            float[] vd =
+            {
                 //front
-                0.0f,  0.0f, 0.0f,     0.0f,  0.0f, 1.0f,   0, 10,  //0
-                0.0f,  0.0f, 10.0f,     0.0f,  0.0f, 1.0f,   0, 0,  //1
-                10.0f, 0.0f, 10.0f,     0.0f,  0.0f, 1.0f,   10, 0,  //2
-                    
-                10.0f, 0.0f, 10.0f,     0.0f,  0.0f, 1.0f,   10, 0,  //2
-                10.0f, 0.0f, 0.0f,     0.0f,  0.0f, 1.0f,   10, 10,  //3
-                0.0f, 0.0f, 0.0f,     0.0f,  0.0f, 1.0f,   0, 10,  //0
+                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0, 10, //0
+                0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 0, 0, //1
+                10.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 10, 0, //2
+
+                10.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 10, 0, //2
+                10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 10, 10, //3
+                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0, 10, //0
             };
 
-            var model = CreateModel(vd, id, new BoundingBox(0, 10));
-            var staticModel = CreateStaticModel(gridNode, model, gridMaterial);
-
-
-            #region Update
             SubscribeToEvent(E.Update, args =>
             {
                 var timestep = args[E.Update.TimeStep].Float;
                 Debug.Assert(this != null);
 
-                int xx = (int)_camera3DNode.Position.X / 16;
-                int yy = (int)_camera3DNode.Position.Z / 16;
+                int xx = (int) _camera3DNode.Position.X / 16;
+                int yy = (int) _camera3DNode.Position.Z / 16;
 
                 if (Context.Input.GetKeyDown(Key.KeyEscape))
                 {
@@ -336,6 +339,7 @@ namespace GPE
                             Context.Engine.Exit();
                         }
                     }
+
                     ImGui.End();
 
                 }
@@ -351,6 +355,7 @@ namespace GPE
                         angleX = _camera3DNode.Rotation.EulerAngles.X;
                         angleY = _camera3DNode.Rotation.EulerAngles.Y;
                     }
+
                     isMoving = true;
                 }
 
@@ -359,14 +364,14 @@ namespace GPE
                     var scaleSpeed = 20f;
                     var mouseSensivity = 20f;
 
-                    while(_camera3DNode.Rotation.EulerAngles.X >= 89)
+                    while (_camera3DNode.Rotation.EulerAngles.X >= 89)
                     {
                         angleX -= 0.1f;
                         angleY = 0.1f;
                         _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
                     }
 
-                    while(_camera3DNode.Rotation.EulerAngles.X <= -89)
+                    while (_camera3DNode.Rotation.EulerAngles.X <= -89)
                     {
                         angleX += 0.1f;
                         angleY = 0.1f;
@@ -426,7 +431,7 @@ namespace GPE
                 }
 
             });
-            #endregion
+
         }
 
         private void OnChangeSpaceKeyState(bool value)
@@ -441,20 +446,34 @@ namespace GPE
             {
                 if (ImGui.BeginMenu("File"))
                 {
-                    if (ImGui.MenuItem("Open", "Ctrl+O")) { /* Do stuff */ }
-                    if (ImGui.MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
-                    if (ImGui.MenuItem("Close", "Ctrl+W")) { isShowing = false; }
+                    if (ImGui.MenuItem("Open", "Ctrl+O"))
+                    {
+                        /* Do stuff */
+                    }
+
+                    if (ImGui.MenuItem("Save", "Ctrl+S"))
+                    {
+                        /* Do stuff */
+                    }
+
+                    if (ImGui.MenuItem("Close", "Ctrl+W"))
+                    {
+                        isShowing = false;
+                    }
+
                     ImGui.EndMenu();
                 }
 
                 if (ImGui.BeginMenu("Create"))
                 {
-                    if (ImGui.MenuItem("Terrain", "Ctrl+T")) 
-                    { 
+                    if (ImGui.MenuItem("Terrain", "Ctrl+T"))
+                    {
                         //
                     }
+
                     ImGui.EndMenu();
                 }
+
                 ImGui.EndMenuBar();
             }
         }
@@ -477,6 +496,7 @@ namespace GPE
                     i = 0;
                     //gridSize *= 10;
                 }
+
                 //Z
                 _debugRenderer.AddLine(new Vector3(x, 0, 0), new Vector3(x, 0, gridSize), color, depthTest);
                 //X
@@ -526,8 +546,8 @@ namespace GPE
         /// <returns>Model</returns>
         public Model CreateModel(float[] f_verts, int[] f_facesIndex, BoundingBox boundingBox)
         {
-            uint numVertices = (uint)f_verts.Length;
-            uint numFaces = (uint)f_facesIndex.Length;
+            uint numVertices = (uint) f_verts.Length;
+            uint numFaces = (uint) f_facesIndex.Length;
 
             Model model = new Model(Context);
             VertexBuffer vertexBuffer = new VertexBuffer(Context);
@@ -592,12 +612,13 @@ namespace GPE
             staticModel.SetModel(model);
             staticModel.SetMaterial(material);
             staticModel.CastShadows = true;
-        
+
 
             return staticModel;
         }
 
-        public StaticModel CreateStaticModelBlock(Node node, float[] f_verts, int[] f_facesIndex, Material material, int blockID, BoundingBox boundingBox)
+        public StaticModel CreateStaticModelBlock(Node node, float[] f_verts, int[] f_facesIndex, Material material,
+            int blockID, BoundingBox boundingBox)
         {
             if (blockID > 0)
             {

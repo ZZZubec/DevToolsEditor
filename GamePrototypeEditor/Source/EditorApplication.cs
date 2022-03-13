@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using Urho3DNet;
-using GPE.StateMachine;
 using GPE.Windows;
 using GPE;
 using GPE.Core;
@@ -34,7 +33,7 @@ namespace GPE
         public Node _camera3DNode;
 
         //private KinematicCharacterController _characterController;
-        private Node _cameraRoot;
+        public Node _cameraRoot;
         private Node _light = null;
         private Material _material = null;
 
@@ -48,6 +47,8 @@ namespace GPE
         private float angleY;
 
         private bool isShowing = true;
+        private IntVector2 mouse_position;
+        private UI ui;
 
         private float[] vertexData = new float[]
         {
@@ -121,9 +122,8 @@ namespace GPE
         //private RigidBody _body;
         //private CollisionShape _shape;
         public DebugRenderer _debugRenderer;
-
-        public StateMachineSystem stateSystem;
-        public WindowsSystem windows;
+        
+        public WindowsSystem ws;
 
 
         protected override void Dispose(bool disposing)
@@ -149,19 +149,30 @@ namespace GPE
             }
 
             if (_options.Width.HasValue)
+            {
                 EngineParameters[Urho3D.EpWindowWidth] = _options.Width.Value;
+            }
+
             if (_options.Height.HasValue)
+            {
                 EngineParameters[Urho3D.EpWindowHeight] = _options.Height.Value;
+            }
+
             EngineParameters[Urho3D.EpWindowTitle] = "Game Prototype Editor";
-            EngineParameters[Urho3D.EpResourcePrefixPaths] = $"{currentDir};{currentDir}/../../../../Content";
+            EngineParameters[Urho3D.EpResourcePrefixPaths] = $"{currentDir};{currentDir}/../../../../../Content;{currentDir}/../Content;";
             EngineParameters[Urho3D.EpHighDpi] = _options.HighDpi;
             EngineParameters[Urho3D.EpRenderPath] = _options.RenderPath;
         }
 
         public override void Start()
         {
+            InitScene();
+            SubscribeEvents();
+        }
 
-            UI ui = Context.GetSubsystem<UI>();
+        private void InitScene()
+        {
+            ui = Context.GetSubsystem<UI>();
             var uiStyle = GetCache().GetResource<XMLFile>("UI/DefaultStyle.xml");
             ui.Root.SetDefaultStyle(uiStyle);
 
@@ -197,27 +208,6 @@ namespace GPE
             light.LightMode = LightMode.LmRealtime;
             light.LightType = LightType.LightDirectional;
 
-            #region Character
-
-            /*
-            var character = _scene.CreateChild("character");
-            _body = character.CreateComponent<RigidBody>();
-            _body.CollisionLayer = 1u;
-            _body.SetKinematic(true);
-            _body.SetTrigger(true);
-            _body.SetAngularFactor(Vector3.Zero);
-            _body.CollisionEventMode = CollisionEventMode.CollisionAlways;
-
-            _shape = character.CreateComponent<CollisionShape>();
-            _shape.SetCapsule(0.7f, 1.8f, new Vector3(0.0f, 0.9f, 0.0f));
-
-            _characterController = character.CreateComponent<KinematicCharacterController>();
-            */
-
-            #endregion
-
-
-
             _cameraRoot = _scene.CreateChild("Camera Pivot", CreateMode.Replicated);
             _cameraRoot.Position = new Vector3(0, 0, 0);
             _camera3DNode = _cameraRoot.CreateChild("Main Camera", CreateMode.Replicated);
@@ -234,29 +224,24 @@ namespace GPE
 
             Context.Renderer.SetViewport(0, _viewport3D);
 
-            #region WindowsSystem
+    #region WindowsSystem
+            ws = new WindowsSystem(this, _scene, _cameraRoot);
+    #endregion
 
-            //stateSystem = new StateMachineSystem();
-            //windows = new WindowsSystem(this);
-
-            #endregion
-
-            #region Mouse
-
+    #region Mouse
             Context.Input.SetMouseVisible(true);
             Context.Input.SetMouseGrabbed(false);
             Context.Input.SetMouseMode(MouseMode.MmFree);
             Context.Input.MousePosition = new IntVector2(Context.Graphics.Width / 2, Context.Graphics.Height / 2);
             //Context.Input.SetMouseMode(MouseMode.MmRelative, false);
-
-            #endregion
+    #endregion
 
             _debugHud = Context.Engine.CreateDebugHud();
             _debugHud.Mode = DebugHudMode.DebughudShowAll;
 
-            if (windows != null)
+            if (ws != null)
             {
-                windows.SetCamera(_camera3DNode, _viewport3D.Camera);
+                ws.SetCamera(_camera3DNode, _viewport3D);
             }
 
 
@@ -282,156 +267,182 @@ namespace GPE
             #endregion
 
             _debugRenderer = _scene.CreateComponent<DebugRenderer>();
+        }
+        
+        private void SubscribeEvents()
+        {
+            SubscribeToEvent(E.KeyDown, KeyDown);
+            SubscribeToEvent(E.MouseButtonDown, OnMouseDown);
+            SubscribeToEvent(E.MouseMove, OnMouseMove);
+            SubscribeToEvent(E.MouseButtonUp, OnMouseUp);
+            SubscribeToEvent(E.Resized, ScreenResize);
+            SubscribeToEvent(E.Update, OnUpdate);
+        }
 
-            if (stateSystem != null)
+        private void ScreenResize(VariantMap map)
+        {
+            if (ws != null)
             {
-                stateSystem.onSpaceKeyChangeState += OnChangeSpaceKeyState;
+                ws.OnResized(map);
+            }
+        }
+
+        private void KeyDown(VariantMap map)
+        {
+            var key = map[E.KeyDown.Key].Int;
+
+            if (key == (int)Key.KeyEscape)
+            {
+                Context.Instance.Engine.Exit();
+            }
+        }
+
+        private void OnMouseMove(VariantMap map)
+        {
+            mouse_position = new IntVector2(map[E.MouseMove.X].Int, map[E.MouseMove.Y].Int);
+        }
+
+        private void OnMouseDown(VariantMap map)
+        {
+            var button = map[E.MouseButtonDown.Button].Int;
+
+            //
+        }
+
+        private void OnMouseUp(VariantMap map)
+        {
+            var button = map[E.MouseButtonDown.Button].Int;
+
+            //
+        }
+
+        private void OnUpdate(VariantMap map)
+        {
+            float deltaTime = map[E.Update.TimeStep].Float;
+
+            Debug.Assert(this != null);
+
+            int xx = (int) _camera3DNode.Position.X / 16;
+            int yy = (int) _camera3DNode.Position.Z / 16;
+
+            if (Context.Input.GetKeyDown(Key.KeyEscape))
+            {
+                Context.Engine.Exit();
             }
 
-            int[] id =
+            ShowGrid();
+            ShowMenu();
+
+            if (isShowing)
             {
-                0, 1, 2,
-                3, 4, 5
-            };
-
-            float[] vd =
-            {
-                //front
-                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0, 10, //0
-                0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 0, 0, //1
-                10.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 10, 0, //2
-
-                10.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 10, 0, //2
-                10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 10, 10, //3
-                0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0, 10, //0
-            };
-
-            SubscribeToEvent(E.Update, args =>
-            {
-                var timestep = args[E.Update.TimeStep].Float;
-                Debug.Assert(this != null);
-
-                int xx = (int) _camera3DNode.Position.X / 16;
-                int yy = (int) _camera3DNode.Position.Z / 16;
-
-                if (Context.Input.GetKeyDown(Key.KeyEscape))
+                /*
+                if (ImGui.Begin("Urho3D.NET"))
                 {
-                    Context.Engine.Exit();
+
+                    ImGui.TextColored(Color.White,
+                        $"chunk:{xx}_{yy}\n" +
+                        $"pos:{_camera3DNode.Position.X},{_camera3DNode.Position.Y},{_camera3DNode.Position.Z}\n" +
+                        $"rotXYZ:{_camera3DNode.Rotation.EulerAngles.X},{_camera3DNode.Rotation.EulerAngles.Y},{_camera3DNode.Rotation.EulerAngles.Z}\n" +
+                        $"rotXY:{angleX},{angleY}\n" +
+                        $"pos:{ui.CursorPosition.X},{ui.CursorPosition.Y}\n" +
+                        $"Frame time: {deltaTime}, \n");
+                    if (ImGui.Button("Exit"))
+                    {
+                        Context.Engine.Exit();
+                    }
                 }
 
-                ShowGrid();
-                ShowMenu();
+                ImGui.End();
+                */
 
-                if (isShowing)
+            }
+
+            var isMoving = false;
+            if (Context.Input.GetMouseButtonDown(MouseButton.MousebRight))
+            {
+                if (!isMoving)
                 {
-                    if (ImGui.Begin("Urho3D.NET"))
-                    {
-
-                        ImGui.TextColored(Color.White,
-                            $"chunk:{xx}_{yy}\n" +
-                            $"pos:{_camera3DNode.Position.X},{_camera3DNode.Position.Y},{_camera3DNode.Position.Z}\n" +
-                            $"rotXYZ:{_camera3DNode.Rotation.EulerAngles.X},{_camera3DNode.Rotation.EulerAngles.Y},{_camera3DNode.Rotation.EulerAngles.Z}\n" +
-                            $"rotXY:{angleX},{angleY}\n" +
-                            $"pos:{ui.CursorPosition.X},{ui.CursorPosition.Y}\n" +
-                            $"Frame time: {timestep}, \n");
-                        if (ImGui.Button("Exit"))
-                        {
-                            Context.Engine.Exit();
-                        }
-                    }
-
-                    ImGui.End();
-
+                    Context.Input.SetMouseVisible(false);
+                    Context.Input.SetMouseGrabbed(true);
+                    Context.Input.SetMouseMode(MouseMode.MmRelative, true);
+                    angleX = _cameraRoot.Rotation.EulerAngles.X;
+                    angleY = _cameraRoot.Rotation.EulerAngles.Y;
                 }
 
-                var isMoving = false;
-                if (Context.Input.GetMouseButtonDown(MouseButton.MousebRight))
+                //isMoving = true;
+            }
+
+            if (isMoving)
+            {
+                var scaleSpeed = 2f;
+                var mouseSensivity = 20f;
+
+                /*
+                while (_camera3DNode.Rotation.EulerAngles.X >= 89)
                 {
-                    if (!isMoving)
-                    {
-                        Context.Input.SetMouseVisible(false);
-                        Context.Input.SetMouseGrabbed(true);
-                        Context.Input.SetMouseMode(MouseMode.MmRelative, true);
-                        angleX = _camera3DNode.Rotation.EulerAngles.X;
-                        angleY = _camera3DNode.Rotation.EulerAngles.Y;
-                    }
-
-                    isMoving = true;
-                }
-
-                if (isMoving)
-                {
-                    var scaleSpeed = 20f;
-                    var mouseSensivity = 20f;
-
-                    while (_camera3DNode.Rotation.EulerAngles.X >= 89)
-                    {
-                        angleX -= 0.1f;
-                        angleY = 0.1f;
-                        _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
-                    }
-
-                    while (_camera3DNode.Rotation.EulerAngles.X <= -89)
-                    {
-                        angleX += 0.1f;
-                        angleY = 0.1f;
-                        _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
-                    }
-
-                    Vector3 moveDirection = Vector3.Zero;
-                    float moveX = 0;
-                    float moveY = 0;
-
-                    if (Context.Input.GetKeyDown(Key.KeyW))
-                    {
-                        moveY = 1;
-                    }
-
-                    if (Context.Input.GetKeyDown(Key.KeyS))
-                    {
-                        moveY = -1;
-                    }
-
-                    if (Context.Input.GetKeyDown(Key.KeyA))
-                    {
-                        moveX = -1;
-                    }
-
-                    if (Context.Input.GetKeyDown(Key.KeyD))
-                    {
-                        moveX = 1;
-                    }
-
-                    moveDirection =
-                        moveX * scaleSpeed * _camera3DNode.Right * timestep +
-                        moveY * scaleSpeed * _camera3DNode.Direction * timestep;
-                    _camera3DNode.Position += moveDirection;
-
-                    IntVector2 vec = Context.Input.MouseMove;
-                    if (timestep > 0.01f)
-                        timestep = 0.01f;
-                    angleY += vec.X * mouseSensivity * timestep;
-                    angleX += vec.Y * mouseSensivity * timestep;
+                    angleX -= 0.1f;
+                    angleY = 0.1f;
                     _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
-                    /**/
                 }
-                else
+
+                while (_camera3DNode.Rotation.EulerAngles.X <= -89)
                 {
-                    if (Context.Input.IsMouseGrabbed())
-                    {
-                        Context.Input.SetMouseGrabbed(false);
-                        Context.Input.SetMouseVisible(true);
-                        Context.Input.SetMouseMode(MouseMode.MmFree);
-                    }
+                    angleX += 0.1f;
+                    angleY = 0.1f;
+                    _camera3DNode.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
                 }
+                */
+                Vector3 moveDirection = Vector3.Zero;
+                float moveX = 0;
+                float moveY = 0;
 
-                if (windows != null)
+                if (Context.Input.GetKeyDown(Key.KeyW))
                 {
-                    windows.InputUpdate(timestep);
+                    moveY = 1;
                 }
 
-            });
+                if (Context.Input.GetKeyDown(Key.KeyS))
+                {
+                    moveY = -1;
+                }
 
+                if (Context.Input.GetKeyDown(Key.KeyA))
+                {
+                    moveX = -1;
+                }
+
+                if (Context.Input.GetKeyDown(Key.KeyD))
+                {
+                    moveX = 1;
+                }
+
+                moveDirection =
+                    moveX * scaleSpeed * _cameraRoot.Right * deltaTime +
+                    moveY * scaleSpeed * _cameraRoot.Direction * deltaTime;
+                _cameraRoot.Position += moveDirection;
+
+                IntVector2 vec = Context.Input.MouseMove;
+                if (deltaTime > 0.01f)
+                    deltaTime = 0.01f;
+                angleY += vec.X * mouseSensivity * deltaTime;
+                angleX += vec.Y * mouseSensivity * deltaTime;
+                _cameraRoot.Rotation = new Quaternion(new Vector3(angleX, angleY, 0));
+                /**/
+            }
+            else
+            {
+                if (Context.Input.IsMouseGrabbed())
+                {
+                    Context.Input.SetMouseGrabbed(false);
+                    Context.Input.SetMouseVisible(true);
+                    Context.Input.SetMouseMode(MouseMode.MmFree);
+                }
+            }
+
+            if (ws != null)
+            {
+                ws.OnUpdate(deltaTime);
+            }
         }
 
         private void OnChangeSpaceKeyState(bool value)
@@ -611,7 +622,7 @@ namespace GPE
             StaticModel staticModel = node.CreateComponent<StaticModel>();
             staticModel.SetModel(model);
             staticModel.SetMaterial(material);
-            staticModel.CastShadows = true;
+            staticModel.CastShadows = false;
 
 
             return staticModel;

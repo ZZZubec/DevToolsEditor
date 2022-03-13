@@ -8,6 +8,7 @@ namespace GPE
         public static Texture2D terrain = Context.Instance.ResourceCache.GetResource<Texture2D>("Icons/terrain.png");
         public static Texture2D paint = Context.Instance.ResourceCache.GetResource<Texture2D>("Icons/paint.png");
         public static Texture2D UI = Context.Instance.ResourceCache.GetResource<Texture2D>("Icons/UI.png");
+        public static Texture2D UI_panel = Context.Instance.ResourceCache.GetResource<Texture2D>("Icons/UI_panel.png");
 
         public static int font1_symbols_width = 42;
         public static int font1_glyph_width = 6;
